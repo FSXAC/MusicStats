@@ -5,4 +5,4 @@ Generate Spotify-pie-like visualization given Apple Music Library.xml export
 
 Example:
 
-![](genre-artist.png)
+![](genre_artist.png)
