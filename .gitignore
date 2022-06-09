@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Library files
+data/Library.xml
+artist_text.png
+genre_pie.png
