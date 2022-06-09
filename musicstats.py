@@ -1,7 +1,9 @@
-from math import trunc
+
+
 from dataparser import *
 
 import matplotlib.pyplot as plt
+import itertools
 
 # Collect information about the genre
 def collect_genre_info(data, truncate_at=-1):
@@ -62,9 +64,10 @@ def collect_artist_info(data, truncate_at=-1):
 
     return sorted_artists
 
-def plot_genre_pie(genre_data):
+def plot_genre_pie(ax, genre_data):
     """
     Plots the genre data into a pie chart
+    @parma ax: the axis to plot the pie chart on
     @param genre_data: a dictionary of genres and their plays
 
     Note: we assume that the data is sorted by play count
@@ -74,69 +77,99 @@ def plot_genre_pie(genre_data):
     labels = [genre[0] for genre in genre_data]
     sizes = [genre[1] for genre in genre_data]
 
-    # Explode all the slices just a bit
-    # explode = [0.1 for i in range(len(sizes))]
-
-    plt.pie(
+    ax.pie(
         sizes,
-        # labels=labels,
+        labels=labels,
         # autopct='%1.1f%%',
         # explode=explode,
         wedgeprops={'edgecolor': 'white'},
+        textprops={'color': 'white'},
         counterclock=False,
         shadow=False,
         startangle=90
     )
-    plt.axis('equal')
+    ax.axis('equal')
+
+    # Get handles and labels for legend
+    handles, labels = ax.get_legend_handles_labels()
+
+    # Helper functiont to re-order the legend
+    def flip(items, ncol):
+        return itertools.chain(*[items[i::ncol] for i in range(ncol)])
+
+    ncols = 4
+    legend_handles = list(flip(handles, ncols))
+    legend_labels = list(flip([ l.lower() for l in labels ], ncols))
 
     # Add a legend at the bottom
-    plt.legend(
+    ax.legend(
+        handles=legend_handles,
+        labels=legend_labels,
         loc='upper center',
-        labels=[ l.lower() for l in labels ],
         bbox_to_anchor=(0.5, -0.01),
-        ncol=4,
-        # mode='expand',
+        ncol=ncols,
         fancybox=False,
         frameon=False,
-        shadow=False
+        shadow=False,
+        # fontsize=6,
+        
+        prop = {'family': 'Helvetica Neue', 'size': 6}
     )
 
     # Save the plot
-    plt.savefig('genre_pie.png', bbox_inches='tight', dpi=300)
+    # fig.savefig('genre_pie.png', bbox_inches='tight', dpi=300)
 
-def plot_artist_text(artist_data):
+    # return fig
+
+def plot_artist_text(ax, artist_data, count):
     """
     Plots the artist data into a list, where text is the artist name
     and the size is the play count
+    @param ax: the axis to plot the artist data on
     @param artist_data: a dictionary of artists and their plays
     """
 
     # Create a pie chart of the artist data
-    artists = [artist[0] for artist in reversed(artist_data)]
+    artist_length_cutoff = 48
+    artists = [artist[0] if len(artist[0]) < artist_length_cutoff else artist[0][:artist_length_cutoff-3] + '...' for artist in reversed(artist_data)]
     playcounts = [artist[1] for artist in reversed(artist_data)]
 
-    # Create a new plot
-    plt.figure(figsize=(10, 10))
-
     # Turn off axis
-    plt.axis('off')
+    ax.axis('off')
 
-    # For each artist, plot the artist's name
-    for i, artist in enumerate(artists):
-        plt.text(
+    y_offset = 0.0
+    y_position = y_offset
+    font_scale = 1.2
+
+    for i in range(len(artists)):
+
+        font_size = font_scale * playcounts[i] ** 0.5
+        
+        ax.text(
             0.5,
-            0.06 * i,
-            artist,
+            y_position,
+            artists[i],
             horizontalalignment='center',
             verticalalignment='center',
-            fontsize=(playcounts[i] ** 0.5),
+            fontsize=font_size,
 
-            # Bold
-            weight='bold'
+            # Font
+            # fontname='Helvetica Neue Bold',
+            # # weight = 'bold',
+
+            font = {
+                'family': 'Helvetica Neue',
+                'weight': 'bold',
+            }
         )
+
+        # Increment the y position based on the text height
+        y_position += (1.0 / count) * (0.1) * font_size
+
     
     # Save the plot
-    plt.savefig('artist_text.png', bbox_inches='tight', dpi=300)
+    # ax.savefig('artist_text.png', bbox_inches='tight', dpi=300)
+    # return fig
 
 
 # Test
@@ -144,19 +177,31 @@ if __name__ == '__main__':
     # Read the data
     data = read_data()
 
+    # Filter the data to only include songs added in the last year
+    data = filter_by_date(data, '2021-01-01')
+
     TRUNCATE_AT = 18
 
     # Collect the genre information
     genre_info = collect_genre_info(data, truncate_at=TRUNCATE_AT)
+
+    # Setup plot with two subplots vertically stacked, with figsize
+    fig, ax = plt.subplots(
+        nrows=2,
+        ncols=1,
+        figsize=(5, 9)
+    )
     
     # Plot the genre info
-    plot_genre_pie(genre_info)
+    plot_genre_pie(ax[0], genre_info)
 
     # Collect the artist information
     artist_info = collect_artist_info(data, truncate_at=TRUNCATE_AT)
 
-    # Print the artists
-    for artist, count in artist_info:
-        print(artist, count)
+    plot_artist_text(ax[1], artist_info, TRUNCATE_AT)
 
-    plot_artist_text(artist_info)
+    # Save the plot
+    fig.savefig('genre_artist.png', bbox_inches='tight', dpi=300)
+
+    # Show the plot
+    plt.show()

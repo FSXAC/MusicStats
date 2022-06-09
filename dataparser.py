@@ -1,7 +1,7 @@
 # This contains the functions for parsing the library XML file
 
 import xml.etree.ElementTree as ET
-
+import datetime
 
 # Reads the data from file
 def read_data(file_path='data/Library.xml'):
@@ -68,6 +68,37 @@ def parseXML(file):
 
     return tracks_data
 
+# Filter data by date added
+def filter_by_date(data, start_date, end_date=None):
+    """
+    Filter tracks data by date added
+    @param start_date: Start threshold, format is YYYY-MM-DD
+    @param end_date: End threshold, format is YYYY-MM-DD
+    @return the dictionary except with tracks outside of this range removed
+    """
+
+    # Convert the dates to datetime objects
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+
+    if end_date is None:
+        end_date = datetime.datetime.now()
+    else:
+        end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+
+    # Filter the data
+    filtered_data = {}
+    for track_id, track_data in data.items():
+        if 'Date Added' not in track_data:
+            continue
+        
+        # The library stores date in the string format 2018-06-25T21:06:52Z
+        # Convert to datetime object
+        date_added = datetime.datetime.strptime(track_data['Date Added'], '%Y-%m-%dT%H:%M:%SZ')
+
+        if date_added >= start_date and date_added <= end_date:
+            filtered_data[track_id] = track_data
+
+    return filtered_data
 
 # Test
 if __name__ == "__main__":
