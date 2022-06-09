@@ -134,16 +134,22 @@ def plot_artist_text(ax, artist_data, count):
     artists = [artist[0] if len(artist[0]) < artist_length_cutoff else artist[0][:artist_length_cutoff-3] + '...' for artist in reversed(artist_data)]
     playcounts = [artist[1] for artist in reversed(artist_data)]
 
+    # Normalize the playcounts
+    playcounts = [playcount/max(playcounts) for playcount in playcounts]
+
     # Turn off axis
     ax.axis('off')
 
     y_offset = 0.0
     y_position = y_offset
-    font_scale = 1.2
+    font_scale = 20
+    min_font_size = 6
 
     for i in range(len(artists)):
 
         font_size = font_scale * playcounts[i] ** 0.5
+        if font_size < min_font_size:
+            font_size = min_font_size
         
         ax.text(
             0.5,
@@ -164,7 +170,7 @@ def plot_artist_text(ax, artist_data, count):
         )
 
         # Increment the y position based on the text height
-        y_position += (1.0 / count) * (0.1) * font_size
+        y_position += (1.0 / count) * (0.08) * font_size
 
     
     # Save the plot
